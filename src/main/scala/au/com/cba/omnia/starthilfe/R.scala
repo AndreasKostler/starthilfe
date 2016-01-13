@@ -3,7 +3,10 @@ package starthilfe
 
 import scala.util.control.NonFatal
 
-import org.rosuda.REngine.REngine
+import scalaz._, Scalaz._
+
+import org.rosuda.REngine.{ REngine, REXP, REXPLogical, REXPString }
+
 
 import au.com.cba.omnia.omnitool.{Result, ResultantMonad, ResultantOps, ToResultantMonadOps}
 
@@ -40,23 +43,49 @@ case class R[A](action: REngine => Result[A]) {
 /** Hive operations */
 // NB that this is the Hive equivalent of the HDFS monad in permafrost.
 object R extends ResultantOps[R] with ToResultantMonadOps {
+
   /** Gets the R engine */
   def getREngine: R[REngine] =
     R(client => Result.ok(client))
 
   /** Builds a R operation from a function. The resultant R operation will not throw an exception. */
-  def withClient[A](f: REngine => A): R[A] =
+  def withREngine[A](f: REngine => A): R[A] =
     R(client => Result.safe(f(client)))
 
   /**
    * Sets the R working directory
+   *
+   * @param dir The working directory
    */
-  def setWorkingDir = ???
+  def setWorkingDir(dir: String): R[REXP] = R.getREngine >>= { re =>
+    val res = re.parseAndEval(s"setwd('${dir}')")
+    R.value(res)
+  }
+
+  def isEnvironment(env: String): R[Boolean] = R.getREngine >>= { re =>
+    val res = re.parseAndEval(s"is.environment($env)") match {
+      case log: REXPLogical => log
+      case _ => throw new ClassCastException
+    }
+    R.value(res.isTRUE.head)
+  }
+  /**
+   * Creates a R environment and assigns it to env
+   * @param env The environment
+   */
+  def createEnvironment(env: String): R[String] = R.getREngine >>= { re =>
+    val _ = re.parseAndEval(s"$env <- new.env()")
+    R.value(env)
+  }
 
   /**
    * Creates a R environment and assigns it to env
+   * if it doesn't already exists. Return Error if it
+   * does already exist
+   * @param env The environment
    */
-  def createEnvironment = ???
+  def createEnvironmentStrict(env: String): R[REXP] = ???
+
 
   /**
    *
