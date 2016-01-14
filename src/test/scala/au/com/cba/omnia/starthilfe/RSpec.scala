@@ -21,12 +21,12 @@ R Operations
 ===============
 
 R operations should:
-  obey resultant monad laws (monad and plus laws)                            ${resultantMonad.laws[R]}
+  obey resultant monad laws (monad and plus laws) ${resultantMonad.laws[R]}
 R operations:
-  R handles exceptions  $safeR
-  .GlobalEnv is environment $globalEnvR
-  Arbitrary object is not environment $arbEnvR
-  Created environment must exist $existsEnvR
+  R handles exceptions                            $safeR
+  .GlobalEnv is environment                       $globalEnvR
+  Arbitrary object is not environment             $arbEnvR
+  Created environment must exist                  $existsEnvR
 """
 
   def safeR = prop { (t: Throwable) =>
@@ -35,7 +35,13 @@ R operations:
       Result.exception(t)
     }
 
-    R.value(3).map(_ => throw t) must beResult { Result.exception(t) }
+    R.withEnvironment(_ => throw t) must beResult {
+      Result.exception(t)
+    }
+
+    R.value(3).map(_ => throw t) must beResult {
+      Result.exception(t)
+    }
   }
 
   def globalEnvR = {
@@ -66,10 +72,10 @@ R operations:
 
   implicit def RengineEqual: Equal[R[Int]] =
     Equal.equal[R[Int]]((a, b) =>
-      a.run must_== b.run)
+      a.run(None) must_== b.run(None))
 
   def beResult[A](expected: Result[A]): Matcher[R[A]] =
-    (h: R[A]) => h.run must_== expected
+    (h: R[A]) => h.run(None) must_== expected
 
   def beValue[A](expected: A): Matcher[R[A]] =
     beResult(Result.ok(expected))
