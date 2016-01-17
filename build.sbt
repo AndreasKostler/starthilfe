@@ -4,7 +4,6 @@ val omnitoolVersion    = "1.12.0-20160104235530-f3eb090"
 val rengineVersion     = "2.1.0"
 
 uniformDependencySettings
-uniformThriftSettings
 strictDependencySettings
 
 libraryDependencies :=
@@ -25,6 +24,12 @@ unmanagedJars in Compile <++= baseDirectory map { base =>
   val customJars = (baseDirectories ** "*.jar")
   customJars.classpath
 }
+
+val libPath = s"${rHome}/library/rJava/jri:" + System.getProperty("Djava.library.path")
+
+javaOptions in Test += s"-Djava.library.path=$libPath"
+
+fork in Test := true
 
 updateOptions                     := updateOptions.value.withCachedResolution(true)
 publishArtifact           in Test := true

@@ -9,9 +9,7 @@ import org.specs2.matcher.Matcher
 import scalaz.Scalaz._
 import scalaz.Equal
 
-import org.rosuda.REngine.{REXPInteger, REXPNull, REXP}
-
-import au.com.cba.omnia.omnitool.{Result, Ok, Error}
+import au.com.cba.omnia.omnitool.Result
 import au.com.cba.omnia.omnitool.test.OmnitoolProperties.resultantMonad
 import au.com.cba.omnia.omnitool.test.Arbitraries._
 
