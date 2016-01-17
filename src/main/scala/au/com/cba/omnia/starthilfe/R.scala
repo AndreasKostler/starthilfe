@@ -5,7 +5,7 @@ import scala.util.control.NonFatal
 
 import scalaz._, Scalaz._
 
-import org.rosuda.REngine.{ REngine, REXP, REXPLogical, REXPString }
+import org.rosuda.REngine.{ REngine, REXP, REXPLogical, REXPEnvironment, REXPString, REXPNull }
 
 
 import au.com.cba.omnia.omnitool.{Result, ResultantMonad, ResultantOps, ToResultantMonadOps}
@@ -34,7 +34,7 @@ case class R[A](action: (REXP, REngine) => Result[A]) {
         //create R environment
         val e = env
           .map(e => re.parseAndEval(s"$e <- new.env()"))
-          .getOrElse(re.parseAndEval(s"globalenv()"))
+          .getOrElse(new REXPNull)
 
         action(e, re)
       } catch {
@@ -77,9 +77,9 @@ object R extends ResultantOps[R] with ToResultantMonadOps {
    *
    * @param dir The working directory
    */
-  def setWorkingDir(dir: String): R[REXP] = R.getREngine >>= { re =>
-    val res = re.parseAndEval(s"setwd('${dir}')")
-    R.value(res)
+  def setWorkingDir(dir: String): R[Unit] = R.getREngine >>= { re =>
+    val _ = re.parseAndEval(s"setwd('${dir}')")
+    R.value(())
   }
 
   def isEnvironment(env: String): R[Boolean] = R.getREngine >>= { re =>
@@ -113,6 +113,12 @@ object R extends ResultantOps[R] with ToResultantMonadOps {
    *
    */
   def runScript = ???
+
+  def eval(cmd: String): R[REXP] = R.getREngine >>= { case re =>
+    val res = re.parseAndEval(cmd)
+    R.value(res)
+  }
+
 
   implicit val monad: ResultantMonad[R] = new ResultantMonad[R] {
     def rPoint[A](v: => Result[A]): R[A] = R[A]( (_, _) => v)

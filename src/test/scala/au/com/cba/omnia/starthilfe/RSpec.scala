@@ -9,11 +9,11 @@ import org.specs2.matcher.Matcher
 import scalaz.Scalaz._
 import scalaz.Equal
 
+import org.rosuda.REngine.{REXPInteger, REXPNull, REXP}
+
 import au.com.cba.omnia.omnitool.{Result, Ok, Error}
 import au.com.cba.omnia.omnitool.test.OmnitoolProperties.resultantMonad
 import au.com.cba.omnia.omnitool.test.Arbitraries._
-
-import au.com.cba.omnia.thermometer.tools.ExecutionSupport
 
 object RSpec extends Specification with ScalaCheck {
   def is = sequential ^ s2"""
@@ -27,6 +27,8 @@ R operations:
   .GlobalEnv is environment                       $globalEnvR
   Arbitrary object is not environment             $arbEnvR
   Created environment must exist                  $existsEnvR
+  R evaluates constant correctly                  $evalConstantR
+  R evaluates constant in environment correctly   $evalConstantEnvR
 """
 
   def safeR = prop { (t: Throwable) =>
@@ -67,6 +69,21 @@ R operations:
     res must beValue(true)
   }
 
+  def evalConstantR = {
+    val res = for {
+      r <- R.eval("as.integer(42)")
+    } yield r.asInteger == 42
+    res must beValue(true)
+  }
+
+  def evalConstantEnvR = {
+    val res = for {
+      env <- R.createEnvironment("foo")
+      r <- R.withREngine( re => re.parseAndEval("as.integer(42)"))
+    } yield r.asInteger == 42
+    res must beValue(true)
+  }
+
   implicit def RengineArbirary[A: Arbitrary]: Arbitrary[R[A]] =
     Arbitrary(Arbitrary.arbitrary[Result[A]] map (R.result(_)))
 
@@ -79,4 +96,5 @@ R operations:
 
   def beValue[A](expected: A): Matcher[R[A]] =
     beResult(Result.ok(expected))
+
 }
