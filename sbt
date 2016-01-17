@@ -498,8 +498,14 @@ fi
 # traceLevel is 0.12+
 [[ -n "$trace_level" ]] && setTraceLevel
 
+# Add rJava related options
+: ${R_HOME:=/Library/Frameworks/R.framework/Resources}
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$R_HOME/lib:$R_HOME/bin
+PATH=$PATH:$R_HOME/library/rJava/jri
+addJava "-Djava.library.path=$R_HOME/library/rJava/jri"
+
 main () {
-  execRunner "$java_cmd" \
+  R_HOME=$R_HOME PATH=$PATH LD_LIBRARY_PATH=$LD_LIBRARY_PATH execRunner "$java_cmd" \
     "${extra_jvm_opts[@]}" \
     "${java_args[@]}" \
     -jar "$sbt_jar" \
